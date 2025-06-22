@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Animal Info</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+</head>
+<body>
+    
+    <img src="images/bgt.png" class="bgimg" alt="bg">
+  <h1>Halal Animal Info</h1>
+  <div class="section">
+    <p id="animalData">Loading...</p>
+  </div>
+  <style>
+    .bgimg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+}
+.section {
+background: rgba(255, 255, 255, 0.4);
+  padding: 20px;
+  margin: 20px auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  width: 1000px;;
+    }
+  </style>
+
+  <script>
+    const contractAddress = "0x29bd1d5395671cee8603c150162c8364a7c3c4dc";
+    const abi = [
+  {
+    "inputs": [
+      { "internalType": "string", "name": "_animalId", "type": "string" },
+      { "internalType": "string", "name": "_halalCert", "type": "string" },
+      { "internalType": "string", "name": "_slaughterDate", "type": "string" },
+      { "internalType": "string", "name": "_farmLocation", "type": "string" }
+    ],
+    "name": "addAnimal",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "_animalId", "type": "string" },
+      { "internalType": "string", "name": "_temperature", "type": "string" },
+      { "internalType": "string", "name": "_humidity", "type": "string" },
+      { "internalType": "string", "name": "_timestamp", "type": "string" },
+      { "internalType": "string", "name": "_location", "type": "string" },
+      { "internalType": "string", "name": "_handlingNotes", "type": "string" }
+    ],
+    "name": "addShipment",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" },
+      { "internalType": "uint8", "name": "role", "type": "uint8" }
+    ],
+    "name": "assignRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "string", "name": "_animalId", "type": "string" }],
+    "name": "getAnimalData",
+    "outputs": [
+      { "internalType": "string", "name": "", "type": "string" },
+      { "internalType": "string", "name": "", "type": "string" },
+      { "internalType": "string", "name": "", "type": "string" },
+      { "internalType": "string", "name": "", "type": "string" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "string", "name": "_animalId", "type": "string" }],
+    "name": "getShipmentData",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "string", "name": "animalId", "type": "string" },
+          { "internalType": "string", "name": "temperature", "type": "string" },
+          { "internalType": "string", "name": "humidity", "type": "string" },
+          { "internalType": "string", "name": "timestamp", "type": "string" },
+          { "internalType": "string", "name": "location", "type": "string" },
+          { "internalType": "string", "name": "handlingNotes", "type": "string" },
+          { "internalType": "address", "name": "addedBy", "type": "address" }
+        ],
+        "internalType": "struct HalalFoodSupplyChain.Shipment[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "name": "userRoles",
+    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const animalId = urlParams.get('animalId');
+
+    if (!animalId) {
+      document.getElementById("animalData").innerText = "No animal ID provided.";
+    }
+
+    async function loadData() {
+      if (typeof window.ethereum !== "undefined") {
+        const web3 = new Web3(window.ethereum);
+        await ethereum.request({ method: "eth_requestAccounts" });
+        const accounts = await web3.eth.getAccounts();
+        const contract = new web3.eth.Contract(abi, contractAddress);
+
+        try {
+          const data = await contract.methods.getAnimalData(animalId).call();
+          const shipments = await contract.methods.getShipmentData(animalId).call();
+
+          let output = `
+          Animal ID: ${data[0]}
+          Halal Cert: ${data[1]}
+          Slaughter Date: ${data[2]}
+          Farm Location: ${data[3]}
+
+          Shipments:\n`;
+
+          shipments.forEach((s, i) => {
+            output += `
+            [${i + 1}] Temp: ${s.temperature}°C, Humidity: ${s.humidity}%
+            Timestamp: ${s.timestamp}, Location: ${s.location}
+            Notes: ${s.handlingNotes}\n`;
+          });
+
+          document.getElementById("animalData").innerText = output;
+        } catch (err) {
+          console.error(err);
+          document.getElementById("animalData").innerText = "Failed to load animal data.";
+        }
+      } else {
+        alert("MetaMask is not installed.");
+      }
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
