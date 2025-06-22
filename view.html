@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Animal Info</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <img src="images/bgt.png" class="bgimg" alt="bg">
+  <h1>Halal Animal Info</h1>
+
+  <div class="section">
+    <p id="animalData">Loading...</p>
+  </div>
+
+  <style>
+    .bgimg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+    }
+    .section {
+      background: rgba(255, 255, 255, 0.4);
+      padding: 20px;
+      margin: 20px auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 1000px;
+    }
+  </style>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const animalId = urlParams.get('animalId');
+
+    if (!animalId) {
+      document.getElementById("animalData").innerText = "No animal ID provided.";
+    } else {
+      fetch(`/animaldata/${animalId}.json`)
+        .then(res => {
+          if (!res.ok) throw new Error("Not found");
+          return res.json();
+        })
+        .then(data => {
+          let html = `
+            <strong>Animal ID:</strong> ${data.animalId}<br>
+            <strong>Halal Cert:</strong> ${data.halalCert}<br>
+            <strong>Slaughter Date:</strong> ${data.slaughterDate}<br>
+            <strong>Farm Location:</strong> ${data.farmLocation}<br><br>
+          `;
+
+          if (data.shipments && data.shipments.length > 0) {
+            html += `<strong>Shipments:</strong><br>`;
+            data.shipments.forEach((s, i) => {
+              html += `
+                <em>[${i + 1}]</em> Temp: ${s.temperature}°C, Humidity: ${s.humidity}%<br>
+                Timestamp: ${s.timestamp}, Location: ${s.location}<br>
+                Notes: ${s.handlingNotes}<br><br>
+              `;
+            });
+          } else {
+            html += "No shipments recorded.";
+          }
+
+          document.getElementById("animalData").innerHTML = html;
+        })
+        .catch(err => {
+          document.getElementById("animalData").innerText = "❌ Data not found or failed to load.";
+        });
+    }
+  </script>
+</body>
+</html>
